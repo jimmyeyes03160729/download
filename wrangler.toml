@@ -1,0 +1,23 @@
+name = "link-extractor"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+# 前端靜態檔與 API 放在同一個 Worker（同網域 → session cookie 可用 HttpOnly）
+# 只有 /api/* 會進 Worker 程式，其餘直接回靜態檔
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "link-extractor-db"
+# 執行 `npx wrangler d1 create link-extractor-db` 後，把回傳的 database_id 貼到這裡
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# 以下三個值用 `npx wrangler secret put <名稱>` 設定，不要寫在這個檔案裡：
+#   SETUP_TOKEN     首次建立帳密時要輸入的臨時密語（防止別人搶先設定）
+#   SESSION_SECRET  登入 session 簽章用的隨機字串（至少 32 字元）
+#   ENC_KEY         加密網站 cookie 用的隨機字串（至少 32 字元）

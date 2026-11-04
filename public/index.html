@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>連結擷取器</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="toast" class="toast" hidden></div>
+
+  <!-- 載入中 -->
+  <section id="view-loading" class="center-view">
+    <p class="muted">載入中…</p>
+  </section>
+
+  <!-- 首次設定 -->
+  <section id="view-setup" class="center-view" hidden>
+    <form id="setup-form" class="card auth-card" autocomplete="off">
+      <h1>建立登入帳密</h1>
+      <p class="warn">帳密只能設定一次，設定完成後網站上無法再修改。請妥善保存。</p>
+      <label>設定密語（SETUP_TOKEN）
+        <input name="setupToken" type="password" required autocomplete="off">
+      </label>
+      <label>帳號（3–64 字元）
+        <input name="username" required minlength="3" maxlength="64" autocomplete="username">
+      </label>
+      <label>密碼（至少 10 字元）
+        <input name="password" type="password" required minlength="10" maxlength="256" autocomplete="new-password">
+      </label>
+      <label>再輸入一次密碼
+        <input name="password2" type="password" required minlength="10" maxlength="256" autocomplete="new-password">
+      </label>
+      <p id="setup-msg" class="error" hidden></p>
+      <button type="submit" class="btn primary block">建立並鎖定</button>
+    </form>
+  </section>
+
+  <!-- 登入 -->
+  <section id="view-login" class="center-view" hidden>
+    <form id="login-form" class="card auth-card">
+      <h1>連結擷取器</h1>
+      <label>帳號
+        <input name="username" required autocomplete="username">
+      </label>
+      <label>密碼
+        <input name="password" type="password" required autocomplete="current-password">
+      </label>
+      <p id="login-msg" class="error" hidden></p>
+      <button type="submit" class="btn primary block">登入</button>
+    </form>
+  </section>
+
+  <!-- 主畫面 -->
+  <section id="view-app" hidden>
+    <header class="topbar">
+      <div class="brand">連結擷取器</div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="extract">擷取</button>
+        <button class="tab" data-tab="settings">設定</button>
+      </nav>
+      <div class="topbar-right">
+        <span id="whoami" class="muted"></span>
+        <button id="logout-btn" class="btn ghost small">登出</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- 擷取頁 -->
+      <div id="tab-extract" class="tab-panel">
+        <form id="extract-form" class="card extract-card">
+          <div class="row">
+            <input id="url-input" name="url" type="text" placeholder="貼上網址，例如 https://t.me/s/頻道名" required>
+            <button type="submit" class="btn primary" id="extract-btn">擷取</button>
+          </div>
+          <div class="row options">
+            <label class="check"><input type="checkbox" id="until-seen"> 自動往回翻到上次已讀處（最多 10 頁）</label>
+            <button type="button" class="btn ghost small" id="save-source-btn">＋ 存為常用來源</button>
+          </div>
+          <div id="sources" class="chips"></div>
+        </form>
+
+        <div id="import-wait" class="card notice" hidden>
+          等待書籤小工具送來頁面內容…（若一直沒反應，請回原頁面再按一次書籤）
+        </div>
+
+        <div id="results" class="card" hidden>
+          <div class="results-head">
+            <div>
+              <h2 id="res-title"></h2>
+              <div id="res-meta" class="muted small"></div>
+            </div>
+            <div class="actions">
+              <button class="btn small" id="mark-all-btn">全部標為已讀</button>
+              <button class="btn small" id="copy-btn">複製勾選連結</button>
+              <button class="btn small" id="open-btn">開啟勾選連結</button>
+            </div>
+          </div>
+          <div class="filters">
+            <input id="f-text" type="search" placeholder="篩選：關鍵字或 #標籤（空白分隔，-開頭表示排除）">
+            <select id="f-type"><option value="">全部類型</option></select>
+            <label class="check"><input type="checkbox" id="f-new"> 只看新的</label>
+          </div>
+          <div class="table-wrap">
+            <table class="items">
+              <thead>
+                <tr>
+                  <th class="c-check"><input type="checkbox" id="check-all" title="全選"></th>
+                  <th>檔名 / 標題</th>
+                  <th class="c-size">大小</th>
+                  <th class="c-links">下載</th>
+                </tr>
+              </thead>
+              <tbody id="items-body"></tbody>
+            </table>
+          </div>
+          <p id="empty-msg" class="muted center" hidden>沒有符合條件的項目</p>
+          <div class="more-wrap"><button class="btn" id="more-btn" hidden>載入更多（往前一頁）</button></div>
+        </div>
+      </div>
+
+      <!-- 設定頁 -->
+      <div id="tab-settings" class="tab-panel" hidden>
+        <div class="card">
+          <h2>書籤小工具</h2>
+          <p class="muted">伺服器抓不到的頁面（需要登入、或有瀏覽器安全檢查，例如 EYNY），請在瀏覽器打開該頁面後按這個書籤，頁面內容會送到這裡解析。</p>
+          <p>把下面按鈕<b>拖到書籤列</b>：</p>
+          <p><a id="bookmarklet" class="btn primary" href="#">📥 送到連結擷取器</a></p>
+          <details>
+            <summary class="muted small">無法拖曳？手動新增書籤，網址貼上這段</summary>
+            <textarea id="bookmarklet-code" readonly rows="4"></textarea>
+          </details>
+        </div>
+
+        <div class="card">
+          <h2>網域白名單與解析設定</h2>
+          <p class="muted small">只有白名單內的網域能讓伺服器直接抓取。書籤小工具送來的頁面不受白名單限制，但會套用這裡的解析設定。</p>
+          <div class="table-wrap">
+            <table class="sites">
+              <thead><tr><th>網域</th><th>解析方式</th><th>Cookie</th><th>備註</th><th></th></tr></thead>
+              <tbody id="sites-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <form id="site-form" class="card">
+          <h2 id="site-form-title">新增 / 編輯網域</h2>
+          <label>網域（含子網域，例：example.com）
+            <input name="domain" required placeholder="example.com">
+          </label>
+          <label>解析方式
+            <select name="adapter" id="site-adapter"></select>
+          </label>
+          <label id="rules-field" hidden>Selector 規則（JSON）
+            <textarea name="rules" rows="7" spellcheck="false" placeholder='{"item": "article.post", "title": "h2 a", "size": ".size", "next": "a.next"}'></textarea>
+            <span class="muted small">欄位：item（必填，每筆項目的容器）、title、link、size、date、next、includeOther</span>
+          </label>
+          <label>登入 Cookie（需要登入才看得到的網站才填；會加密保存）
+            <textarea name="cookie" rows="3" spellcheck="false" placeholder="留空 = 不變更"></textarea>
+          </label>
+          <label class="check"><input type="checkbox" name="clearCookie"> 清除已保存的 Cookie</label>
+          <label>備註
+            <input name="note" maxlength="300">
+          </label>
+          <p id="site-msg" class="error" hidden></p>
+          <div class="row">
+            <button type="submit" class="btn primary">儲存</button>
+            <button type="reset" class="btn ghost">清空表單</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </section>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

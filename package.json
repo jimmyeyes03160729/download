@@ -1,0 +1,20 @@
+{
+  "name": "link-extractor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "貼上頻道/論壇網址，列出頁面上的檔名與下載連結（Cloudflare Workers + D1）",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init:local": "wrangler d1 migrations apply link-extractor-db --local",
+    "db:init:remote": "wrangler d1 migrations apply link-extractor-db --remote",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "linkedom": "^0.18.15"
+  },
+  "devDependencies": {
+    "wrangler": "^4.157.0"
+  }
+}
